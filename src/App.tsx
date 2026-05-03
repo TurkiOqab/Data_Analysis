@@ -12,9 +12,12 @@ export default function App() {
   const [fileName, setFileName] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
+  const [lastQuestion, setLastQuestion] = useState<string | null>(null);
 
   async function ask(question: string) {
     if (!dataset) return;
+    setLastQuestion(question);
+    setResult(null);
     setLoading(true);
     try {
       const r = await askClaude(question, dataset);
@@ -42,7 +45,7 @@ export default function App() {
           <UploadCard
             dataset={dataset}
             fileName={fileName}
-            onLoad={(ds, name) => { setDataset(ds); setFileName(name); setResult(null); }}
+            onLoad={(ds, name) => { setDataset(ds); setFileName(name); setResult(null); setLastQuestion(null); }}
             onError={(msg) => toast.error(msg)}
           />
           {dataset && <PreviewCard dataset={dataset} />}
@@ -54,7 +57,8 @@ export default function App() {
         open={loading || !!result}
         loading={loading}
         result={result}
-        onClose={() => setResult(null)}
+        question={lastQuestion}
+        onClose={() => { setResult(null); setLastQuestion(null); }}
       />
 
       <Toaster theme="dark" position="top-right" />
