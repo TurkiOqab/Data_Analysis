@@ -1,0 +1,6 @@
+date,region,category,product,units,revenue,profit
+2026-01-04,North,Electronics,Headphones,42,3780,1134
+2026-01-04,South,Apparel,Hoodie,18,1080,432
+2026-01-05,East,Electronics,Speaker,24,2160,648
+2026-01-05,West,Home,Lamp,36,1440,504
+2026-01-06,North,Apparel,Tee,61,1830,549
