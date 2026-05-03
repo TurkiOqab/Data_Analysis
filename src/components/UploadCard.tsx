@@ -5,6 +5,9 @@ import { Button } from '@/components/ui/button';
 import { parseCsv, CsvParseError } from '@/lib/csv';
 import type { Dataset } from '@/types';
 
+const SIZE_BYTES = 2 * 1024 * 1024;     // 2 MB
+const SIZE_ROWS = 10_000;
+
 interface Props {
   dataset: Dataset | null;
   fileName: string | null;
@@ -21,6 +24,14 @@ export function UploadCard({ dataset, fileName, onLoad, onError }: Props) {
     setParseError(null);
     try {
       const ds = await parseCsv(file);
+      const tooBig = file.size > SIZE_BYTES || ds.rows.length > SIZE_ROWS;
+      if (tooBig) {
+        const ok = window.confirm(
+          `This file is ${file.size > SIZE_BYTES ? `${(file.size / 1024 / 1024).toFixed(1)} MB` : `${ds.rows.length.toLocaleString()} rows`} ` +
+          `— sending it to Claude may be slow and costly. Continue?`
+        );
+        if (!ok) return;
+      }
       onLoad(ds, file.name);
     } catch (e) {
       const msg = e instanceof CsvParseError ? e.message : 'Failed to parse CSV.';
