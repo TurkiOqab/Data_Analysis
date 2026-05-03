@@ -24,14 +24,12 @@ interface Props {
 }
 
 export function ResultOverlay({ open, loading, result, onClose }: Props) {
-  const [lineIndex, setLineIndex] = useState(() => Math.floor(Math.random() * WAITING_LINES.length));
+  const [line, setLine] = useState('');
 
   useEffect(() => {
-    if (!loading) return;
-    const id = setInterval(() => {
-      setLineIndex((i) => (i + 1) % WAITING_LINES.length);
-    }, 2500);
-    return () => clearInterval(id);
+    if (loading) {
+      setLine(WAITING_LINES[Math.floor(Math.random() * WAITING_LINES.length)]);
+    }
   }, [loading]);
 
   useEffect(() => {
@@ -61,20 +59,20 @@ export function ResultOverlay({ open, loading, result, onClose }: Props) {
       <div className="flex min-h-screen items-start justify-center p-4 sm:p-8">
         <div
           onClick={(e) => e.stopPropagation()}
-          className="relative w-full max-w-3xl my-4 rounded-xl border border-line bg-panel shadow-2xl animate-in fade-in zoom-in-95"
+          className="relative w-full max-w-3xl my-4 rounded-xl border border-line bg-bg shadow-2xl animate-in fade-in zoom-in-95"
         >
           {!loading && (
             <button
               onClick={onClose}
               aria-label="Close"
-              className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-md text-muted hover:bg-panel-2 hover:text-ink transition"
+              className="absolute right-3 top-3 z-10 flex h-8 w-8 items-center justify-center rounded-md text-muted hover:bg-panel hover:text-ink transition"
             >
               ✕
             </button>
           )}
 
           {loading ? (
-            <LoadingView line={WAITING_LINES[lineIndex]} />
+            <LoadingView line={line} />
           ) : result ? (
             <div className="space-y-4 p-4 sm:p-5">
               <InsightCard insight={result.insight} />
@@ -96,7 +94,7 @@ function LoadingView({ line }: { line: string }) {
       </div>
       <div className="text-center">
         <div className="text-[11px] uppercase tracking-wider text-muted mb-1">Asking Claude</div>
-        <div key={line} className="text-sm text-ink-soft animate-in fade-in">{line}</div>
+        <div className="text-sm text-ink-soft">{line}</div>
       </div>
     </div>
   );
