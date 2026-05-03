@@ -53,7 +53,7 @@ Choose chart types that best fit the question: bar for category comparisons, lin
 export function buildAnthropicRequest(question: string, dataset: Dataset) {
   const datasetJson = JSON.stringify({ columns: dataset.columns, rows: dataset.rows });
   return {
-    model: 'claude-haiku-4-5-20251001',
+    model: 'claude-sonnet-4-6',
     max_tokens: 4096,
     system: [
       { type: 'text' as const, text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' as const } },

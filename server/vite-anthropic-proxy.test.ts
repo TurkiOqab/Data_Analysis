@@ -7,9 +7,9 @@ describe('buildAnthropicRequest', () => {
     rows: [{ region: 'North', revenue: 100 }, { region: 'South', revenue: 80 }],
   };
 
-  it('uses the Haiku 4.5 model', () => {
+  it('uses the Sonnet 4.6 model', () => {
     const req = buildAnthropicRequest('Total by region?', dataset);
-    expect(req.model).toBe('claude-haiku-4-5-20251001');
+    expect(req.model).toBe('claude-sonnet-4-6');
   });
 
   it('includes a system message that names the tool', () => {
