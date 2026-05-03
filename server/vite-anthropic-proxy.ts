@@ -111,7 +111,11 @@ export function anthropicProxy(): Plugin {
         } catch (e: any) {
           res.statusCode = e?.status ?? 500;
           res.setHeader('content-type', 'application/json');
-          res.end(JSON.stringify({ error: e?.message ?? 'Anthropic call failed' }));
+          const raw = e?.message ?? 'Anthropic call failed';
+          const friendly = /prompt is too long/i.test(raw)
+            ? `Your dataset is too large to send to Claude in one request. Try a smaller CSV (under ~5,000 rows for v1).`
+            : raw;
+          res.end(JSON.stringify({ error: friendly }));
         }
       });
     },
