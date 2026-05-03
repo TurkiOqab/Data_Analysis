@@ -3,8 +3,7 @@ import { Toaster, toast } from 'sonner';
 import { UploadCard } from '@/components/UploadCard';
 import { PreviewCard } from '@/components/PreviewCard';
 import { AskCard } from '@/components/AskCard';
-import { InsightCard } from '@/components/InsightCard';
-import { ChartsGrid } from '@/components/ChartsGrid';
+import { ResultOverlay } from '@/components/ResultOverlay';
 import { askClaude, AnthropicError } from '@/lib/anthropic';
 import type { Dataset, Result } from '@/types';
 
@@ -48,10 +47,16 @@ export default function App() {
           />
           {dataset && <PreviewCard dataset={dataset} />}
           {dataset && <AskCard disabled={!dataset} loading={loading} onAsk={ask} />}
-          {result && <InsightCard insight={result.insight} />}
-          {result && result.charts.length > 0 && <ChartsGrid charts={result.charts} />}
         </div>
       </div>
+
+      <ResultOverlay
+        open={loading || !!result}
+        loading={loading}
+        result={result}
+        onClose={() => setResult(null)}
+      />
+
       <Toaster theme="dark" position="top-right" />
     </div>
   );
