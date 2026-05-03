@@ -65,9 +65,7 @@ For multi-step tasks, state a brief plan:
 
 ## Project Context
 
-_(Fill in as the project takes shape: stack, data sources, key directories, run/test commands.)_
-
-- **Stack:** TBD
-- **Data sources:** TBD
-- **Run:** TBD
-- **Test:** TBD
+- **Stack:** Vite + React 18 + TypeScript, Tailwind + shadcn/ui, Recharts, PapaParse, Anthropic SDK
+- **Data sources:** User-uploaded CSV files, parsed in-browser
+- **Run:** `npm run dev` (requires `.env` with `ANTHROPIC_API_KEY`)
+- **Test:** `npm test` (Vitest)
