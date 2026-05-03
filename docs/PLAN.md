@@ -8,7 +8,7 @@
 
 **Tech Stack:** Vite, React 18, TypeScript, Tailwind CSS, shadcn/ui, Recharts, PapaParse, `@anthropic-ai/sdk`, Vitest, Sonner (toasts).
 
-**Reference spec:** [`docs/superpowers/specs/2026-05-03-insight-csv-design.md`](../specs/2026-05-03-insight-csv-design.md)
+**Reference spec:** [`docs/DESIGN.md`](./DESIGN.md)
 
 ---
 
