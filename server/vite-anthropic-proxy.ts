@@ -53,7 +53,7 @@ Choose chart types that best fit the question: bar for category comparisons, lin
 export function buildAnthropicRequest(question: string, dataset: Dataset) {
   const datasetJson = JSON.stringify({ columns: dataset.columns, rows: dataset.rows });
   return {
-    model: 'claude-sonnet-4-6',
+    model: 'claude-haiku-4-5-20251001',
     max_tokens: 4096,
     system: [
       { type: 'text' as const, text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' as const } },
@@ -81,6 +81,8 @@ export function anthropicProxy(): Plugin {
     name: 'anthropic-proxy',
     configureServer(server) {
       server.middlewares.use('/api/anthropic', async (req, res) => {
+        const t0 = Date.now();
+        console.log(`[anthropic] ${req.method} received`);
         if (req.method !== 'POST') {
           res.statusCode = 405;
           return res.end('Method not allowed');
@@ -93,14 +95,24 @@ export function anthropicProxy(): Plugin {
         }
         try {
           const body = await readJson(req);
+          const sizeKb = Math.round(JSON.stringify(body).length / 1024);
+          console.log(`[anthropic] body parsed in ${Date.now() - t0}ms — ${body.rows?.length ?? 0} rows, ${sizeKb} KB`);
           const requestBody = buildAnthropicRequest(body.question, {
             columns: body.columns,
             rows: body.rows,
           });
           const client = new Anthropic({ apiKey });
+          const tApi = Date.now();
           const response = await client.messages.create(requestBody as any);
+          const u = response.usage as any;
+          console.log(
+            `[anthropic] Claude responded in ${Date.now() - tApi}ms — ` +
+            `in ${u?.input_tokens ?? '?'} | out ${u?.output_tokens ?? '?'} | ` +
+            `cache write ${u?.cache_creation_input_tokens ?? 0} | cache read ${u?.cache_read_input_tokens ?? 0}`
+          );
           const toolUse = response.content.find((b) => b.type === 'tool_use');
           if (!toolUse || toolUse.type !== 'tool_use') {
+            console.log(`[anthropic] no tool_use in response, content types: ${response.content.map((b) => b.type).join(',')}`);
             res.statusCode = 502;
             res.setHeader('content-type', 'application/json');
             return res.end(JSON.stringify({ error: 'Claude did not call the present_analysis tool.' }));
@@ -108,7 +120,9 @@ export function anthropicProxy(): Plugin {
           res.statusCode = 200;
           res.setHeader('content-type', 'application/json');
           res.end(JSON.stringify(toolUse.input));
+          console.log(`[anthropic] OK — total ${Date.now() - t0}ms`);
         } catch (e: any) {
+          console.log(`[anthropic] FAIL after ${Date.now() - t0}ms: ${e?.status ?? '?'} — ${e?.message ?? 'unknown'}`);
           res.statusCode = e?.status ?? 500;
           res.setHeader('content-type', 'application/json');
           const raw = e?.message ?? 'Anthropic call failed';
