@@ -14,7 +14,7 @@ export default {
         'line-soft': 'hsl(var(--line-soft))',
         ink: 'hsl(var(--ink))',
         'ink-soft': 'hsl(var(--ink-soft))',
-        muted: 'hsl(var(--muted))',
+        muted: { DEFAULT: 'hsl(var(--muted))', foreground: 'hsl(var(--muted))' },
         accent: {
           DEFAULT: 'hsl(var(--accent))',
           strong: 'hsl(var(--accent-strong))',
