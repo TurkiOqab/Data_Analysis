@@ -2,11 +2,30 @@ import { useState } from 'react';
 import { Toaster, toast } from 'sonner';
 import { UploadCard } from '@/components/UploadCard';
 import { PreviewCard } from '@/components/PreviewCard';
-import type { Dataset } from '@/types';
+import { AskCard } from '@/components/AskCard';
+import { InsightCard } from '@/components/InsightCard';
+import { askClaude, AnthropicError } from '@/lib/anthropic';
+import type { Dataset, Result } from '@/types';
 
 export default function App() {
   const [dataset, setDataset] = useState<Dataset | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<Result | null>(null);
+
+  async function ask(question: string) {
+    if (!dataset) return;
+    setLoading(true);
+    try {
+      const r = await askClaude(question, dataset);
+      setResult(r);
+    } catch (e) {
+      const msg = e instanceof AnthropicError ? e.message : 'Failed to reach the server.';
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-bg">
@@ -23,10 +42,12 @@ export default function App() {
           <UploadCard
             dataset={dataset}
             fileName={fileName}
-            onLoad={(ds, name) => { setDataset(ds); setFileName(name); }}
+            onLoad={(ds, name) => { setDataset(ds); setFileName(name); setResult(null); }}
             onError={(msg) => toast.error(msg)}
           />
           {dataset && <PreviewCard dataset={dataset} />}
+          {dataset && <AskCard disabled={!dataset} loading={loading} onAsk={ask} />}
+          {result && <InsightCard insight={result.insight} />}
         </div>
       </div>
       <Toaster theme="dark" position="top-right" />
