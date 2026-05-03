@@ -50,7 +50,7 @@ function renderChart(chart: Chart) {
       <ReLineChart data={chart.data} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
         <XAxis dataKey="x" tick={{ fill: AXIS_COLOR, fontSize: 11 }} stroke={AXIS_COLOR} />
-        <YAxis dataKey="y" tick={{ fill: AXIS_COLOR, fontSize: 11 }} stroke={AXIS_COLOR} />
+        <YAxis tick={{ fill: AXIS_COLOR, fontSize: 11 }} stroke={AXIS_COLOR} />
         <Tooltip contentStyle={tooltipStyle} />
         <Line type="monotone" dataKey="y" stroke={ACCENT} strokeWidth={2} dot={{ fill: ACCENT, r: 3 }} />
       </ReLineChart>
