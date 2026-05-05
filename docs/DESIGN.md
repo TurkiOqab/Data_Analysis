@@ -1,4 +1,4 @@
-# Insight.csv — Design Spec
+# Data Analysis — Design Spec
 
 **Date:** 2026-05-03
 **Status:** Approved (ready for implementation plan)

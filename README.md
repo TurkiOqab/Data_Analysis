@@ -1,4 +1,4 @@
-# Insight.csv
+# Data Analysis
 
 Drop a CSV. Ask questions in plain English. Get a clear, written insight and the right charts back from Claude.
 
@@ -73,8 +73,8 @@ The system prompt tells Claude when it's working from a summary so it can flag a
 **Prerequisites:** Node 20+, an Anthropic API key from <https://console.anthropic.com/settings/keys>.
 
 ```bash
-git clone https://github.com/TurkiOqab/Data_Analysis.git insight-csv
-cd insight-csv
+git clone https://github.com/TurkiOqab/Data_Analysis.git
+cd Data_Analysis
 npm install
 
 # Add your key (gitignored)

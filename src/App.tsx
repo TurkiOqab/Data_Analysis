@@ -36,7 +36,7 @@ export default function App() {
         <header className="mb-7 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-md border border-[hsl(203,55%,18%)] bg-accent-tint text-accent">⌘</div>
-            <div className="font-semibold tracking-tight">Insight<span className="font-normal text-muted">.csv</span></div>
+            <div className="font-semibold tracking-tight">Data <span className="font-normal text-muted">Analysis</span></div>
           </div>
           <div className="rounded-full border border-line bg-panel px-2.5 py-0.5 text-[11px] text-muted">Local · dev</div>
         </header>
