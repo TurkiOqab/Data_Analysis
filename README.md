@@ -51,9 +51,13 @@ Claude is forced to respond by calling a single `present_analysis` tool. That gu
 
 ### Cost cap on large CSVs
 
-Below 500 rows / 200 KB, the full CSV is sent to Claude. Above that, the browser computes a **DatasetSummary** — schema with inferred column types, exact per-column statistics over the *whole* dataset (count, nulls, min/max/mean/sum/p25/p50/p75 for numerics; top-10 values + counts for categoricals; min/max for dates), exact group-by tables for low-cardinality (≤20 distinct) categorical × numeric pairs, and a 100-row random sample for context. The summary serializes to a few KB regardless of whether the CSV is 5,000 or 5,000,000 rows. Claude reasons over the summary and uses the precomputed group-bys for exact column-level answers.
+Below 500 rows / 200 KB, the full CSV is sent to Claude. Above that, the browser computes a **DatasetSummary** — schema with inferred column types, exact per-column statistics over the *whole* dataset (count, nulls, min/max/mean/sum/p25/p50/p75 for numerics; top-10 values + counts for categoricals; min/max for dates), exact group-by tables for low-cardinality (≤20 distinct) categorical × numeric pairs, and a 100-row random sample for context. The summary serializes to a few KB regardless of whether the CSV is 5,000 or 5,000,000 rows.
 
-The system prompt tells Claude when it's working from a summary so it can flag any question that genuinely needs row-level detail it can't see.
+### Row-level questions: Claude as a query planner
+
+Some questions can't be answered from the summary alone — "find the row where X is highest", "top 10 individual transactions by profit". For those, Claude calls a second tool, **`query_dataset`**, with a structured spec (`filter`, `groupBy`, `aggregate`, `sortBy`, `limit`). The browser runs that spec against the full in-memory dataset (`src/lib/query-engine.ts`), returns the rows, and Claude finishes by calling `present_analysis` on the second turn.
+
+The routing is automatic: Claude reads both tool descriptions and chooses based on the question. `tool_choice: 'any'` keeps the structured-output guarantee while letting the model pick which tool to invoke. A 3-turn budget caps the loop. The result is exact answers for both column-level and row-level questions — Claude is the planner, JavaScript does the math.
 
 ## Tech stack
 
@@ -116,7 +120,9 @@ npm run test:watch # rerun tests on change
 │       ├── csv.test.ts              # unit tests
 │       ├── dataset-summary.ts       # threshold check + DatasetSummary computation
 │       ├── dataset-summary.test.ts  # unit tests
-│       ├── anthropic.ts             # POST /api/anthropic client
+│       ├── query-engine.ts          # runs Claude's query_dataset specs against the full dataset
+│       ├── query-engine.test.ts     # unit tests
+│       ├── anthropic.ts             # multi-turn loop client (POST /api/anthropic)
 │       └── utils.ts                 # cn() helper
 ├── server/
 │   ├── vite-anthropic-proxy.ts      # Vite middleware plugin
@@ -132,11 +138,12 @@ npm run test:watch # rerun tests on change
 
 ## Tests
 
-33 unit tests across three files:
+51 unit tests across four files:
 
 - `src/lib/csv.test.ts` — 4 tests, CSV parsing edge cases
 - `src/lib/dataset-summary.test.ts` — 13 tests, schema inference / numeric stats / categorical top-K / date min-max / group-bys / sampling / threshold
-- `server/vite-anthropic-proxy.test.ts` — 16 tests, request-shaping for full and summary modes plus chart-type filtering
+- `src/lib/query-engine.test.ts` — 11 tests, filter / sort+limit / select / groupBy+aggregate / hard-cap clamping
+- `server/vite-anthropic-proxy.test.ts` — 23 tests, request-shaping for full / summary / multi-turn modes plus chart-type filtering and the query_dataset tool
 
 ```bash
 npm test
@@ -150,7 +157,7 @@ UI components are verified manually — see the walkthrough screenshots above.
 - **One question at a time.** No conversation history; each ask replaces the previous result.
 - **Three chart types.** Bar, line, pie. No scatter, area, heatmap, etc.
 - **No streaming.** Responses come back in a single message after Claude finishes.
-- **Summary mode is approximate for row-level questions.** Column-level questions ("totals by region", "trend by month") use exact precomputed group-bys. Questions like "which individual transaction had the highest revenue" can only see the 100-row sample when the dataset is summarized — Claude is told to flag this.
+- **Multi-turn loop is capped at 4 turns.** If Claude needs more than 3 query rounds to gather data, the request fails with "Try a simpler question." In practice almost every question resolves in 1 (column-level) or 2 (row-level) turns.
 
 ## Roadmap
 

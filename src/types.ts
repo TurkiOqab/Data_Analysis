@@ -97,3 +97,44 @@ export interface DatasetSummary {
   groupBys: GroupBy[];
   sample: Record<string, CellValue>[];
 }
+
+// query_dataset — Claude calls this when it needs raw rows or aggregations
+// the precomputed summary doesn't already contain. The browser executes it
+// against the in-memory full dataset and returns the result.
+
+export type SortDirection = 'asc' | 'desc';
+export type Aggregator = 'sum' | 'mean' | 'count' | 'min' | 'max';
+
+export interface QuerySpec {
+  // Optional projection — which columns to return. Defaults to all.
+  select?: string[];
+
+  // Optional filter expressions: AND-ed together. Each {column, op, value}.
+  filter?: Array<{
+    column: string;
+    op: 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte';
+    value: string | number;
+  }>;
+
+  // Optional group-by + aggregation. When set, returns one row per
+  // unique value of `groupBy` with the aggregated metrics.
+  groupBy?: string;
+  aggregate?: Array<{
+    column: string;
+    fn: Aggregator;
+    alias?: string;
+  }>;
+
+  // Optional sort.
+  sortBy?: string;
+  direction?: SortDirection;
+
+  // Required hard cap on returned rows. Server-clamped to a max of 50.
+  limit: number;
+}
+
+export interface QueryResult {
+  rows: Record<string, CellValue>[];
+  totalMatched: number;
+  truncated: boolean;
+}
