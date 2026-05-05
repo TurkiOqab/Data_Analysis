@@ -4,8 +4,14 @@ import { UploadCard } from '@/components/UploadCard';
 import { PreviewCard } from '@/components/PreviewCard';
 import { AskCard } from '@/components/AskCard';
 import { ResultOverlay } from '@/components/ResultOverlay';
+import { HistoryPanel } from '@/components/HistoryPanel';
+import { ComparisonOverlay } from '@/components/ComparisonOverlay';
 import { askClaude, AnthropicError } from '@/lib/anthropic';
-import type { Dataset, Result, ChartType } from '@/types';
+import type { Dataset, Result, ChartType, SavedAsk } from '@/types';
+
+function newId(): string {
+  return `ask_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
 
 export default function App() {
   const [dataset, setDataset] = useState<Dataset | null>(null);
@@ -13,6 +19,8 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const [lastQuestion, setLastQuestion] = useState<string | null>(null);
+  const [savedAsks, setSavedAsks] = useState<SavedAsk[]>([]);
+  const [comparison, setComparison] = useState<SavedAsk[] | null>(null);
 
   async function ask(question: string, allowedChartTypes: ChartType[]) {
     if (!dataset) return;
@@ -22,12 +30,21 @@ export default function App() {
     try {
       const r = await askClaude(question, dataset, allowedChartTypes);
       setResult(r);
+      setSavedAsks((prev) => [
+        ...prev,
+        { id: newId(), question, allowedChartTypes, result: r, askedAt: Date.now() },
+      ]);
     } catch (e) {
       const msg = e instanceof AnthropicError ? e.message : 'Failed to reach the server.';
       toast.error(msg);
     } finally {
       setLoading(false);
     }
+  }
+
+  function viewSaved(saved: SavedAsk) {
+    setLastQuestion(saved.question);
+    setResult(saved.result);
   }
 
   return (
@@ -45,11 +62,28 @@ export default function App() {
           <UploadCard
             dataset={dataset}
             fileName={fileName}
-            onLoad={(ds, name) => { setDataset(ds); setFileName(name); setResult(null); setLastQuestion(null); }}
+            onLoad={(ds, name) => {
+              // Loading a new dataset starts a fresh session; old answers
+              // were about a different file and would only confuse the history.
+              setDataset(ds);
+              setFileName(name);
+              setResult(null);
+              setLastQuestion(null);
+              setSavedAsks([]);
+              setComparison(null);
+            }}
             onError={(msg) => toast.error(msg)}
           />
           {dataset && <PreviewCard dataset={dataset} />}
           {dataset && <AskCard disabled={!dataset} loading={loading} onAsk={ask} />}
+          {dataset && (
+            <HistoryPanel
+              asks={savedAsks}
+              onView={viewSaved}
+              onCompare={(selected) => setComparison(selected)}
+              onClear={() => setSavedAsks([])}
+            />
+          )}
         </div>
       </div>
 
@@ -59,6 +93,12 @@ export default function App() {
         result={result}
         question={lastQuestion}
         onClose={() => { setResult(null); setLastQuestion(null); }}
+      />
+
+      <ComparisonOverlay
+        open={!!comparison}
+        asks={comparison ?? []}
+        onClose={() => setComparison(null)}
       />
 
       <Toaster theme="dark" position="top-right" />

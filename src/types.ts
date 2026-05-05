@@ -138,3 +138,13 @@ export interface QueryResult {
   totalMatched: number;
   truncated: boolean;
 }
+
+// Session history — every successful ask is auto-saved so the user can
+// re-open it and compare answers side by side.
+export interface SavedAsk {
+  id: string;
+  question: string;
+  allowedChartTypes: ChartType[];
+  result: Result;
+  askedAt: number;
+}

@@ -26,6 +26,8 @@ A local-only React web app for AI-powered exploratory data analysis. No backend 
 
 **5. Read the insight, see the charts.** Same overlay swaps to a clean result view: your question echoed at the top, a written insight from Claude, then a responsive grid of 1–4 charts. Close with X / Esc / clicking the backdrop.
 
+**6. Compare past answers.** Every successful ask is auto-saved to a session history list below the Ask card. Click any past question to re-open it. Hit "Compare" to multi-select up to three and view them side-by-side in a wide modal — ideal for comparing how different prompts shape the same dataset's story.
+
 ![Result overlay: insight about top 10 profitable products plus bar charts](./docs/screenshots/data-analysis.png)
 
 ---
@@ -113,6 +115,8 @@ npm run test:watch # rerun tests on change
 │   │   ├── PreviewCard.tsx          # first-20-rows table
 │   │   ├── AskCard.tsx              # question input, suggestions, chart-type toggles
 │   │   ├── ResultOverlay.tsx        # modal: loading state + insight + charts
+│   │   ├── HistoryPanel.tsx         # list of past asks with compare-mode multi-select
+│   │   ├── ComparisonOverlay.tsx    # side-by-side modal for 2-3 saved asks
 │   │   ├── ChartCard.tsx            # bar / line / pie via Recharts
 │   │   └── ui/                      # shadcn/ui primitives
 │   └── lib/
@@ -162,7 +166,7 @@ UI components are verified manually — see the walkthrough screenshots above.
 ## Roadmap
 
 - Per-request cost display in the UI (the dev console already prints input / output / cache tokens per request).
-- Optional Q&A history within a session.
+- Persistent history (currently in-session memory; cleared when a new file is loaded or the page is refreshed).
 - Export rendered insights and charts.
 
 ## Development notes
