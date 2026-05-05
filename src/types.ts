@@ -5,17 +5,17 @@ export interface Dataset {
   rows: Record<string, CellValue>[];
 }
 
-export type ChartType = 'bar' | 'line' | 'pie';
+export type ChartType = 'bar' | 'line';
 
-export interface BarOrPieChart {
-  type: 'bar' | 'pie';
+export interface BarChartSpec {
+  type: 'bar';
   title: string;
   xLabel?: string;
   yLabel?: string;
   data: Array<{ label: string; value: number }>;
 }
 
-export interface LineChart {
+export interface LineChartSpec {
   type: 'line';
   title: string;
   xLabel?: string;
@@ -23,7 +23,7 @@ export interface LineChart {
   data: Array<{ x: string | number; y: number }>;
 }
 
-export type Chart = BarOrPieChart | LineChart;
+export type Chart = BarChartSpec | LineChartSpec;
 
 export interface Result {
   insight: string;

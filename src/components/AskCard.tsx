@@ -10,8 +10,8 @@ const SUGGESTIONS = [
   'Show monthly sales trend',
 ];
 
-const CHART_TYPES: ChartType[] = ['bar', 'line', 'pie'];
-const CHART_LABELS: Record<ChartType, string> = { bar: 'Bar', line: 'Line', pie: 'Pie' };
+const CHART_TYPES: ChartType[] = ['bar', 'line'];
+const CHART_LABELS: Record<ChartType, string> = { bar: 'Bar', line: 'Line' };
 
 interface Props {
   disabled: boolean;

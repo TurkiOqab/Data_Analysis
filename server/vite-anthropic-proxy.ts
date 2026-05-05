@@ -20,8 +20,8 @@ export interface PriorTurn {
   toolResult: any;
 }
 
-export type ChartType = 'bar' | 'line' | 'pie';
-const ALL_CHART_TYPES: ChartType[] = ['bar', 'line', 'pie'];
+export type ChartType = 'bar' | 'line';
+const ALL_CHART_TYPES: ChartType[] = ['bar', 'line'];
 
 export function presentAnalysisTool(allowedTypes: ChartType[] = ALL_CHART_TYPES) {
   const types = allowedTypes.length > 0 ? allowedTypes : ALL_CHART_TYPES;
@@ -54,7 +54,7 @@ export function presentAnalysisTool(allowedTypes: ChartType[] = ALL_CHART_TYPES)
                 items: {
                   type: 'object',
                   description:
-                    'For bar/pie: { label: string, value: number }. For line: { x: string|number, y: number }.',
+                    'For bar: { label: string, value: number }. For line: { x: string|number, y: number }.',
                 },
               },
             },
@@ -130,7 +130,7 @@ export const PRESENT_ANALYSIS_TOOL = presentAnalysisTool();
 const SYSTEM_PROMPT_FULL =
   `You are a senior data analyst. The user has uploaded a CSV and is asking a question about it.
 You MUST respond by calling the present_analysis tool — do not write a normal text reply.
-Choose chart types that best fit the question: bar for category comparisons, line for time series or ordered trends, pie for parts-of-a-whole. Return 1 to 4 charts. Compute values directly from the rows the user provided. Be concise in the insight.`;
+Choose chart types that best fit the question: bar for category comparisons or share-of-total, line for time series or ordered trends. Return 1 to 4 charts. Compute values directly from the rows the user provided. Be concise in the insight.`;
 
 const SYSTEM_PROMPT_SUMMARY =
   `You are a senior data analyst. The user has uploaded a large CSV and is asking a question about it. You are NOT seeing every row — you are seeing a precomputed summary plus a random 100-row sample.

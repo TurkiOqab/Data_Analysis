@@ -16,7 +16,7 @@ A local-only React web app for AI-powered exploratory data analysis. No backend 
 
 ![Data preview heading showing first 20 of 9,994 rows](./docs/screenshots/preview.png)
 
-**3. Ask a question.** Plain English, in the input. Suggested prompts below help you get going. Toggle which chart types Claude is allowed to use (Bar / Line / Pie) — the constraint is enforced at the JSON-schema level, so Claude *cannot* return a disallowed type.
+**3. Ask a question.** Plain English, in the input. Suggested prompts below help you get going. Toggle which chart types Claude is allowed to use (Bar / Line) — the constraint is enforced at the JSON-schema level, so Claude *cannot* return a disallowed type.
 
 ![Ask card with question, suggestion chips, and chart-type toggles](./docs/screenshots/ask.png)
 
@@ -117,7 +117,7 @@ npm run test:watch # rerun tests on change
 │   │   ├── ResultOverlay.tsx        # modal: loading state + insight + charts
 │   │   ├── HistoryPanel.tsx         # list of past asks with compare-mode multi-select
 │   │   ├── ComparisonOverlay.tsx    # side-by-side modal for 2-3 saved asks
-│   │   ├── ChartCard.tsx            # bar / line / pie via Recharts
+│   │   ├── ChartCard.tsx            # bar / line via Recharts
 │   │   └── ui/                      # shadcn/ui primitives
 │   └── lib/
 │       ├── csv.ts                   # PapaParse wrapper, type coercion
@@ -159,7 +159,7 @@ UI components are verified manually — see the walkthrough screenshots above.
 
 - **Local development only.** There is no production deployment story. The dev-server proxy is the only thing that hides the API key.
 - **One question at a time.** No conversation history; each ask replaces the previous result.
-- **Three chart types.** Bar, line, pie. No scatter, area, heatmap, etc.
+- **Two chart types.** Bar and line. No pie, scatter, area, heatmap, etc.
 - **No streaming.** Responses come back in a single message after Claude finishes.
 - **Multi-turn loop is capped at 4 turns.** If Claude needs more than 3 query rounds to gather data, the request fails with "Try a simpler question." In practice almost every question resolves in 1 (column-level) or 2 (row-level) turns.
 

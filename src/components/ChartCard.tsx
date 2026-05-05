@@ -1,11 +1,10 @@
 import {
-  Bar, BarChart, CartesianGrid, Cell, Legend, Line, LineChart as ReLineChart,
-  Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  Bar, BarChart, CartesianGrid, Line, LineChart as ReLineChart,
+  ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import type { Chart } from '@/types';
 
 const ACCENT = '#7dd3fc';
-const PIE_COLORS = ['#7dd3fc', '#38bdf8', '#0ea5e9', '#0284c7', '#0369a1'];
 const AXIS_COLOR = '#7e8499';
 const GRID_COLOR = '#1c1f2c';
 
@@ -34,52 +33,26 @@ export function ChartCard({ chart }: { chart: Chart }) {
 }
 
 function renderChart(chart: Chart) {
-  if (chart.type === 'bar') {
-    return (
-      <BarChart data={chart.data} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
-        <XAxis dataKey="label" tick={{ fill: AXIS_COLOR, fontSize: 11 }} stroke={AXIS_COLOR} />
-        <YAxis tick={{ fill: AXIS_COLOR, fontSize: 11 }} stroke={AXIS_COLOR} />
-        <Tooltip contentStyle={tooltipStyle} cursor={{ fill: '#ffffff10' }} />
-        <Bar dataKey="value" fill={ACCENT} radius={[4, 4, 0, 0]} />
-      </BarChart>
-    );
+  switch (chart.type) {
+    case 'bar':
+      return (
+        <BarChart data={chart.data} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
+          <XAxis dataKey="label" tick={{ fill: AXIS_COLOR, fontSize: 11 }} stroke={AXIS_COLOR} />
+          <YAxis tick={{ fill: AXIS_COLOR, fontSize: 11 }} stroke={AXIS_COLOR} />
+          <Tooltip contentStyle={tooltipStyle} cursor={{ fill: '#ffffff10' }} />
+          <Bar dataKey="value" fill={ACCENT} radius={[4, 4, 0, 0]} />
+        </BarChart>
+      );
+    case 'line':
+      return (
+        <ReLineChart data={chart.data} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
+          <XAxis dataKey="x" tick={{ fill: AXIS_COLOR, fontSize: 11 }} stroke={AXIS_COLOR} />
+          <YAxis tick={{ fill: AXIS_COLOR, fontSize: 11 }} stroke={AXIS_COLOR} />
+          <Tooltip contentStyle={tooltipStyle} />
+          <Line type="monotone" dataKey="y" stroke={ACCENT} strokeWidth={2} dot={{ fill: ACCENT, r: 3 }} />
+        </ReLineChart>
+      );
   }
-  if (chart.type === 'line') {
-    return (
-      <ReLineChart data={chart.data} margin={{ top: 8, right: 8, bottom: 8, left: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke={GRID_COLOR} />
-        <XAxis dataKey="x" tick={{ fill: AXIS_COLOR, fontSize: 11 }} stroke={AXIS_COLOR} />
-        <YAxis tick={{ fill: AXIS_COLOR, fontSize: 11 }} stroke={AXIS_COLOR} />
-        <Tooltip contentStyle={tooltipStyle} />
-        <Line type="monotone" dataKey="y" stroke={ACCENT} strokeWidth={2} dot={{ fill: ACCENT, r: 3 }} />
-      </ReLineChart>
-    );
-  }
-  // pie
-  return (
-    <PieChart>
-      <Tooltip contentStyle={tooltipStyle} />
-      <Legend
-        verticalAlign="bottom"
-        align="center"
-        wrapperStyle={{ fontSize: 11, color: AXIS_COLOR, paddingTop: 8 }}
-      />
-      <Pie
-        data={chart.data}
-        dataKey="value"
-        nameKey="label"
-        cx="50%"
-        cy="45%"
-        outerRadius="75%"
-        stroke="#0a0c12"
-        strokeWidth={2}
-        isAnimationActive={false}
-      >
-        {chart.data.map((_, i) => (
-          <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-        ))}
-      </Pie>
-    </PieChart>
-  );
 }

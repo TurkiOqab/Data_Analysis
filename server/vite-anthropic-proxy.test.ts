@@ -59,9 +59,9 @@ describe('present_analysis tool shape', () => {
     expect(props.charts.maxItems).toBe(4);
   });
 
-  it('default enum includes all three chart types', () => {
+  it('default enum includes both supported chart types', () => {
     const props = PRESENT_ANALYSIS_TOOL.input_schema.properties;
-    expect(props.charts.items.properties.type.enum).toEqual(['bar', 'line', 'pie']);
+    expect(props.charts.items.properties.type.enum).toEqual(['bar', 'line']);
   });
 });
 
@@ -71,13 +71,13 @@ describe('presentAnalysisTool — chart type filtering', () => {
     expect(tool.input_schema.properties.charts.items.properties.type.enum).toEqual(['bar']);
   });
 
-  it('falls back to all three when given an empty list', () => {
+  it('falls back to both supported types when given an empty list', () => {
     const tool = presentAnalysisTool([]);
-    expect(tool.input_schema.properties.charts.items.properties.type.enum).toEqual(['bar', 'line', 'pie']);
+    expect(tool.input_schema.properties.charts.items.properties.type.enum).toEqual(['bar', 'line']);
   });
 
   it('keeps name and tool surface stable when filtering', () => {
-    const tool = presentAnalysisTool(['line', 'pie']);
+    const tool = presentAnalysisTool(['line']);
     expect(tool.name).toBe('present_analysis');
     expect(tool.input_schema.properties.charts.maxItems).toBe(4);
   });
@@ -92,10 +92,10 @@ describe('buildAnthropicRequest with allowedChartTypes', () => {
     expect(tool.input_schema.properties.charts.items.properties.type.enum).toEqual(['bar', 'line']);
   });
 
-  it('defaults to all three when no allowed types are given', () => {
+  it('defaults to both supported types when no allowed types are given', () => {
     const req = buildAnthropicRequest('Q', dataset);
     const tool = req.tools[0];
-    expect(tool.input_schema.properties.charts.items.properties.type.enum).toEqual(['bar', 'line', 'pie']);
+    expect(tool.input_schema.properties.charts.items.properties.type.enum).toEqual(['bar', 'line']);
   });
 });
 
@@ -169,9 +169,9 @@ describe('buildSummaryRequest', () => {
   });
 
   it('passes allowedChartTypes through to the present_analysis tool enum', () => {
-    const req = buildSummaryRequest('Q', summary, ['pie']);
+    const req = buildSummaryRequest('Q', summary, ['line']);
     const tool = req.tools.find((t: any) => t.name === 'present_analysis') as any;
-    expect(tool.input_schema.properties.charts.items.properties.type.enum).toEqual(['pie']);
+    expect(tool.input_schema.properties.charts.items.properties.type.enum).toEqual(['line']);
   });
 });
 
@@ -185,7 +185,7 @@ describe('buildSummaryRequest with priorTurns', () => {
   };
 
   it('with no priorTurns, messages contains just the initial user turn', () => {
-    const req = buildSummaryRequest('Q', summary, ['bar', 'line', 'pie'], []);
+    const req = buildSummaryRequest('Q', summary, ['bar', 'line'], []);
     expect(req.messages).toHaveLength(1);
     expect(req.messages[0].role).toBe('user');
   });
@@ -198,7 +198,7 @@ describe('buildSummaryRequest with priorTurns', () => {
         toolResult: { rows: [{ x: 99 }, { x: 98 }], totalMatched: 1000, truncated: true },
       },
     ];
-    const req = buildSummaryRequest('Q', summary, ['bar', 'line', 'pie'], priorTurns);
+    const req = buildSummaryRequest('Q', summary, ['bar', 'line'], priorTurns);
     expect(req.messages).toHaveLength(3);
 
     const [first, second, third] = req.messages;
@@ -225,7 +225,7 @@ describe('buildSummaryRequest with priorTurns', () => {
       { toolUseId: 't1', toolInput: { limit: 5 }, toolResult: { rows: [], totalMatched: 0, truncated: false } },
       { toolUseId: 't2', toolInput: { limit: 10 }, toolResult: { rows: [{ x: 1 }], totalMatched: 1, truncated: false } },
     ];
-    const req = buildSummaryRequest('Q', summary, ['bar', 'line', 'pie'], priorTurns);
+    const req = buildSummaryRequest('Q', summary, ['bar', 'line'], priorTurns);
     // 1 initial + 2 turns × 2 messages = 5 messages
     expect(req.messages).toHaveLength(5);
     expect(req.messages[0].role).toBe('user');

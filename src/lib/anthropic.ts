@@ -15,7 +15,7 @@ const MAX_TURNS = 4;
 export async function askClaude(
   question: string,
   dataset: Dataset,
-  allowedChartTypes: ChartType[] = ['bar', 'line', 'pie'],
+  allowedChartTypes: ChartType[] = ['bar', 'line'],
   onTurn?: (turn: number, kind: 'thinking' | 'querying') => void,
 ): Promise<Result> {
   const useSummary = shouldSummarize(dataset);
