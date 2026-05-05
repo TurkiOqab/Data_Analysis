@@ -60,8 +60,22 @@ function renderChart(chart: Chart) {
   return (
     <PieChart>
       <Tooltip contentStyle={tooltipStyle} />
-      <Legend wrapperStyle={{ fontSize: 11, color: AXIS_COLOR }} />
-      <Pie data={chart.data} dataKey="value" nameKey="label" outerRadius={90} stroke="#0a0c12">
+      <Legend
+        verticalAlign="bottom"
+        align="center"
+        wrapperStyle={{ fontSize: 11, color: AXIS_COLOR, paddingTop: 8 }}
+      />
+      <Pie
+        data={chart.data}
+        dataKey="value"
+        nameKey="label"
+        cx="50%"
+        cy="45%"
+        outerRadius="75%"
+        stroke="#0a0c12"
+        strokeWidth={2}
+        isAnimationActive={false}
+      >
         {chart.data.map((_, i) => (
           <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
         ))}
