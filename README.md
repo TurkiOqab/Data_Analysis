@@ -26,7 +26,7 @@ A local-only React web app for AI-powered exploratory data analysis. No backend 
 
 **5. Read the insight, see the charts.** Same overlay swaps to a clean result view: your question echoed at the top, a written insight from Claude, then a responsive grid of 1–4 charts. Close with X / Esc / clicking the backdrop.
 
-![Result overlay: insight about top 10 profitable products plus bar charts](./docs/screenshots/insights.png)
+![Result overlay: insight about top 10 profitable products plus bar charts](./docs/screenshots/data-analysis.png)
 
 ---
 
