@@ -1,12 +1,17 @@
-import type { Dataset, Result } from '@/types';
+import type { Dataset, Result, ChartType } from '@/types';
 import { shouldSummarize, summarize } from '@/lib/dataset-summary';
 
 export class AnthropicError extends Error {}
 
-export async function askClaude(question: string, dataset: Dataset): Promise<Result> {
-  const payload = shouldSummarize(dataset)
+export async function askClaude(
+  question: string,
+  dataset: Dataset,
+  allowedChartTypes: ChartType[] = ['bar', 'line', 'pie'],
+): Promise<Result> {
+  const base = shouldSummarize(dataset)
     ? { question, summary: summarize(dataset) }
     : { question, columns: dataset.columns, rows: dataset.rows };
+  const payload = { ...base, allowedChartTypes };
 
   const res = await fetch('/api/anthropic', {
     method: 'POST',

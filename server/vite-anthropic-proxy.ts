@@ -14,44 +14,53 @@ interface DatasetSummary {
   sample: Array<Record<string, string | number | null>>;
 }
 
-export const PRESENT_ANALYSIS_TOOL = {
-  name: 'present_analysis',
-  description: 'Return the analysis as a plain-English insight plus 1 to 4 charts.',
-  input_schema: {
-    type: 'object',
-    required: ['insight', 'charts'],
-    properties: {
-      insight: {
-        type: 'string',
-        description: '1–4 short paragraphs in plain English answering the question.',
-      },
-      charts: {
-        type: 'array',
-        minItems: 1,
-        maxItems: 4,
-        items: {
-          type: 'object',
-          required: ['type', 'title', 'data'],
-          properties: {
-            type: { type: 'string', enum: ['bar', 'line', 'pie'] },
-            title: { type: 'string' },
-            xLabel: { type: 'string' },
-            yLabel: { type: 'string' },
-            data: {
-              type: 'array',
-              minItems: 1,
-              items: {
-                type: 'object',
-                description:
-                  'For bar/pie: { label: string, value: number }. For line: { x: string|number, y: number }.',
+export type ChartType = 'bar' | 'line' | 'pie';
+const ALL_CHART_TYPES: ChartType[] = ['bar', 'line', 'pie'];
+
+export function presentAnalysisTool(allowedTypes: ChartType[] = ALL_CHART_TYPES) {
+  const types = allowedTypes.length > 0 ? allowedTypes : ALL_CHART_TYPES;
+  return {
+    name: 'present_analysis',
+    description: 'Return the analysis as a plain-English insight plus 1 to 4 charts.',
+    input_schema: {
+      type: 'object',
+      required: ['insight', 'charts'],
+      properties: {
+        insight: {
+          type: 'string',
+          description: '1–4 short paragraphs in plain English answering the question.',
+        },
+        charts: {
+          type: 'array',
+          minItems: 1,
+          maxItems: 4,
+          items: {
+            type: 'object',
+            required: ['type', 'title', 'data'],
+            properties: {
+              type: { type: 'string', enum: types },
+              title: { type: 'string' },
+              xLabel: { type: 'string' },
+              yLabel: { type: 'string' },
+              data: {
+                type: 'array',
+                minItems: 1,
+                items: {
+                  type: 'object',
+                  description:
+                    'For bar/pie: { label: string, value: number }. For line: { x: string|number, y: number }.',
+                },
               },
             },
           },
         },
       },
     },
-  },
-} as const;
+  } as const;
+}
+
+// Backwards-compatible default export — used by the existing tests and as a fallback.
+export const PRESENT_ANALYSIS_TOOL = presentAnalysisTool();
 
 const SYSTEM_PROMPT_FULL =
   `You are a senior data analyst. The user has uploaded a CSV and is asking a question about it.
@@ -73,7 +82,11 @@ For exact values, USE the stats and groupBys (those are exact over the full data
 You MUST respond by calling the present_analysis tool — do not write a normal text reply.
 Choose chart types that best fit the question: bar for category comparisons, line for time series or ordered trends, pie for parts-of-a-whole. Return 1 to 4 charts. Be concise in the insight.`;
 
-export function buildAnthropicRequest(question: string, dataset: Dataset) {
+export function buildAnthropicRequest(
+  question: string,
+  dataset: Dataset,
+  allowedChartTypes: ChartType[] = ALL_CHART_TYPES,
+) {
   const datasetJson = JSON.stringify({ columns: dataset.columns, rows: dataset.rows });
   return {
     model: 'claude-sonnet-4-6',
@@ -81,7 +94,7 @@ export function buildAnthropicRequest(question: string, dataset: Dataset) {
     system: [
       { type: 'text' as const, text: SYSTEM_PROMPT_FULL, cache_control: { type: 'ephemeral' as const } },
     ],
-    tools: [PRESENT_ANALYSIS_TOOL],
+    tools: [presentAnalysisTool(allowedChartTypes)],
     tool_choice: { type: 'tool' as const, name: 'present_analysis' },
     messages: [
       {
@@ -99,7 +112,11 @@ export function buildAnthropicRequest(question: string, dataset: Dataset) {
   };
 }
 
-export function buildSummaryRequest(question: string, summary: DatasetSummary) {
+export function buildSummaryRequest(
+  question: string,
+  summary: DatasetSummary,
+  allowedChartTypes: ChartType[] = ALL_CHART_TYPES,
+) {
   const summaryJson = JSON.stringify(summary);
   return {
     model: 'claude-sonnet-4-6',
@@ -107,7 +124,7 @@ export function buildSummaryRequest(question: string, summary: DatasetSummary) {
     system: [
       { type: 'text' as const, text: SYSTEM_PROMPT_SUMMARY, cache_control: { type: 'ephemeral' as const } },
     ],
-    tools: [PRESENT_ANALYSIS_TOOL],
+    tools: [presentAnalysisTool(allowedChartTypes)],
     tool_choice: { type: 'tool' as const, name: 'present_analysis' },
     messages: [
       {
@@ -147,10 +164,13 @@ export function anthropicProxy(): Plugin {
           const sizeKb = Math.round(JSON.stringify(body).length / 1024);
           const mode = body.summary ? 'summary' : 'full';
           const rowsForLog = mode === 'summary' ? body.summary.totalRows : (body.rows?.length ?? 0);
-          console.log(`[anthropic] body parsed in ${Date.now() - t0}ms — mode=${mode}, ${rowsForLog} rows, ${sizeKb} KB on wire`);
+          const allowed: ChartType[] = Array.isArray(body.allowedChartTypes) && body.allowedChartTypes.length > 0
+            ? body.allowedChartTypes.filter((t: any) => ALL_CHART_TYPES.includes(t))
+            : ALL_CHART_TYPES;
+          console.log(`[anthropic] body parsed in ${Date.now() - t0}ms — mode=${mode}, ${rowsForLog} rows, ${sizeKb} KB on wire, charts=${allowed.join('/')}`);
           const requestBody = mode === 'summary'
-            ? buildSummaryRequest(body.question, body.summary)
-            : buildAnthropicRequest(body.question, { columns: body.columns, rows: body.rows });
+            ? buildSummaryRequest(body.question, body.summary, allowed)
+            : buildAnthropicRequest(body.question, { columns: body.columns, rows: body.rows }, allowed);
           const client = new Anthropic({ apiKey });
           const tApi = Date.now();
           const response = await client.messages.create(requestBody as any);

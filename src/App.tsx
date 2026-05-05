@@ -5,7 +5,7 @@ import { PreviewCard } from '@/components/PreviewCard';
 import { AskCard } from '@/components/AskCard';
 import { ResultOverlay } from '@/components/ResultOverlay';
 import { askClaude, AnthropicError } from '@/lib/anthropic';
-import type { Dataset, Result } from '@/types';
+import type { Dataset, Result, ChartType } from '@/types';
 
 export default function App() {
   const [dataset, setDataset] = useState<Dataset | null>(null);
@@ -14,13 +14,13 @@ export default function App() {
   const [result, setResult] = useState<Result | null>(null);
   const [lastQuestion, setLastQuestion] = useState<string | null>(null);
 
-  async function ask(question: string) {
+  async function ask(question: string, allowedChartTypes: ChartType[]) {
     if (!dataset) return;
     setLastQuestion(question);
     setResult(null);
     setLoading(true);
     try {
-      const r = await askClaude(question, dataset);
+      const r = await askClaude(question, dataset, allowedChartTypes);
       setResult(r);
     } catch (e) {
       const msg = e instanceof AnthropicError ? e.message : 'Failed to reach the server.';

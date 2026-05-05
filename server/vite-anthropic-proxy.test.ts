@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildAnthropicRequest, buildSummaryRequest, PRESENT_ANALYSIS_TOOL } from './vite-anthropic-proxy';
+import { buildAnthropicRequest, buildSummaryRequest, presentAnalysisTool, PRESENT_ANALYSIS_TOOL } from './vite-anthropic-proxy';
 
 describe('buildAnthropicRequest', () => {
   const dataset = {
@@ -21,7 +21,7 @@ describe('buildAnthropicRequest', () => {
   it('forces the present_analysis tool', () => {
     const req = buildAnthropicRequest('Q', dataset);
     expect(req.tool_choice).toEqual({ type: 'tool', name: 'present_analysis' });
-    expect(req.tools[0]).toBe(PRESENT_ANALYSIS_TOOL);
+    expect(req.tools[0]).toEqual(PRESENT_ANALYSIS_TOOL);
   });
 
   it('passes the dataset and question to the user message', () => {
@@ -48,6 +48,61 @@ describe('buildAnthropicRequest', () => {
     expect(props.insight.type).toBe('string');
     expect(props.charts.type).toBe('array');
     expect(props.charts.maxItems).toBe(4);
+  });
+
+  it('default tool enum includes all three chart types', () => {
+    const props = PRESENT_ANALYSIS_TOOL.input_schema.properties;
+    expect(props.charts.items.properties.type.enum).toEqual(['bar', 'line', 'pie']);
+  });
+});
+
+describe('presentAnalysisTool — chart type filtering', () => {
+  it('restricts the type enum to the allowed list', () => {
+    const tool = presentAnalysisTool(['bar']);
+    expect(tool.input_schema.properties.charts.items.properties.type.enum).toEqual(['bar']);
+  });
+
+  it('falls back to all three when given an empty list', () => {
+    const tool = presentAnalysisTool([]);
+    expect(tool.input_schema.properties.charts.items.properties.type.enum).toEqual(['bar', 'line', 'pie']);
+  });
+
+  it('keeps name and tool surface stable when filtering', () => {
+    const tool = presentAnalysisTool(['line', 'pie']);
+    expect(tool.name).toBe('present_analysis');
+    expect(tool.input_schema.properties.charts.maxItems).toBe(4);
+  });
+});
+
+describe('buildAnthropicRequest with allowedChartTypes', () => {
+  const dataset = { columns: ['a'], rows: [{ a: 1 }] };
+
+  it('passes allowed types through to the tool enum', () => {
+    const req = buildAnthropicRequest('Q', dataset, ['bar', 'line']);
+    const tool = req.tools[0];
+    expect(tool.input_schema.properties.charts.items.properties.type.enum).toEqual(['bar', 'line']);
+  });
+
+  it('defaults to all three when no allowed types are given', () => {
+    const req = buildAnthropicRequest('Q', dataset);
+    const tool = req.tools[0];
+    expect(tool.input_schema.properties.charts.items.properties.type.enum).toEqual(['bar', 'line', 'pie']);
+  });
+});
+
+describe('buildSummaryRequest with allowedChartTypes', () => {
+  const summary = {
+    totalRows: 1000,
+    schema: [{ name: 'a', type: 'numeric' }],
+    stats: { a: { type: 'numeric', count: 1000, nulls: 0, min: 0, max: 100, mean: 50, sum: 50000, p25: 25, p50: 50, p75: 75 } },
+    groupBys: [],
+    sample: [],
+  };
+
+  it('passes allowed types through to the tool enum', () => {
+    const req = buildSummaryRequest('Q', summary, ['pie']);
+    const tool = req.tools[0];
+    expect(tool.input_schema.properties.charts.items.properties.type.enum).toEqual(['pie']);
   });
 });
 

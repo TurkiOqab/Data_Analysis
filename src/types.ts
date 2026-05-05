@@ -5,6 +5,8 @@ export interface Dataset {
   rows: Record<string, CellValue>[];
 }
 
+export type ChartType = 'bar' | 'line' | 'pie';
+
 export interface BarOrPieChart {
   type: 'bar' | 'pie';
   title: string;
