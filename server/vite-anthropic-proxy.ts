@@ -6,6 +6,14 @@ interface Dataset {
   rows: Array<Record<string, string | number | null>>;
 }
 
+interface DatasetSummary {
+  totalRows: number;
+  schema: Array<{ name: string; type: string }>;
+  stats: Record<string, any>;
+  groupBys: Array<{ by: string; metric: string; groups: any[] }>;
+  sample: Array<Record<string, string | number | null>>;
+}
+
 export const PRESENT_ANALYSIS_TOOL = {
   name: 'present_analysis',
   description: 'Return the analysis as a plain-English insight plus 1 to 4 charts.',
@@ -45,10 +53,25 @@ export const PRESENT_ANALYSIS_TOOL = {
   },
 } as const;
 
-const SYSTEM_PROMPT =
+const SYSTEM_PROMPT_FULL =
   `You are a senior data analyst. The user has uploaded a CSV and is asking a question about it.
 You MUST respond by calling the present_analysis tool — do not write a normal text reply.
 Choose chart types that best fit the question: bar for category comparisons, line for time series or ordered trends, pie for parts-of-a-whole. Return 1 to 4 charts. Compute values directly from the rows the user provided. Be concise in the insight.`;
+
+const SYSTEM_PROMPT_SUMMARY =
+  `You are a senior data analyst. The user has uploaded a large CSV and is asking a question about it. You are NOT seeing every row — you are seeing a precomputed summary plus a random 100-row sample.
+
+The summary contains:
+- "totalRows" — the true row count of the full dataset
+- "schema" — column names and inferred types (numeric / categorical / date / text)
+- "stats" — exact per-column statistics computed over the FULL dataset (not the sample). For numeric columns: count, nulls, min, max, mean, sum, p25, p50, p75. For categorical columns: distinct count plus the top 10 values with their counts. For dates: min and max.
+- "groupBys" — exact group-by tables for low-cardinality (≤20 distinct) categorical × numeric pairs. Each entry has the top-10 categories by sum, with sum/mean/count over the full dataset.
+- "sample" — 100 random rows for context only
+
+For exact values, USE the stats and groupBys (those are exact over the full data). Use the sample only to understand row shape and individual examples. If a question requires looking at specific rows you do not have access to (e.g., "find the row where X is highest"), say so explicitly and answer with whatever the stats/groupBys can support.
+
+You MUST respond by calling the present_analysis tool — do not write a normal text reply.
+Choose chart types that best fit the question: bar for category comparisons, line for time series or ordered trends, pie for parts-of-a-whole. Return 1 to 4 charts. Be concise in the insight.`;
 
 export function buildAnthropicRequest(question: string, dataset: Dataset) {
   const datasetJson = JSON.stringify({ columns: dataset.columns, rows: dataset.rows });
@@ -56,7 +79,7 @@ export function buildAnthropicRequest(question: string, dataset: Dataset) {
     model: 'claude-sonnet-4-6',
     max_tokens: 4096,
     system: [
-      { type: 'text' as const, text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' as const } },
+      { type: 'text' as const, text: SYSTEM_PROMPT_FULL, cache_control: { type: 'ephemeral' as const } },
     ],
     tools: [PRESENT_ANALYSIS_TOOL],
     tool_choice: { type: 'tool' as const, name: 'present_analysis' },
@@ -67,6 +90,32 @@ export function buildAnthropicRequest(question: string, dataset: Dataset) {
           {
             type: 'text' as const,
             text: `Dataset (JSON):\n${datasetJson}`,
+            cache_control: { type: 'ephemeral' as const },
+          },
+          { type: 'text' as const, text: `Question: ${question}` },
+        ],
+      },
+    ],
+  };
+}
+
+export function buildSummaryRequest(question: string, summary: DatasetSummary) {
+  const summaryJson = JSON.stringify(summary);
+  return {
+    model: 'claude-sonnet-4-6',
+    max_tokens: 4096,
+    system: [
+      { type: 'text' as const, text: SYSTEM_PROMPT_SUMMARY, cache_control: { type: 'ephemeral' as const } },
+    ],
+    tools: [PRESENT_ANALYSIS_TOOL],
+    tool_choice: { type: 'tool' as const, name: 'present_analysis' },
+    messages: [
+      {
+        role: 'user' as const,
+        content: [
+          {
+            type: 'text' as const,
+            text: `Dataset summary (JSON):\n${summaryJson}`,
             cache_control: { type: 'ephemeral' as const },
           },
           { type: 'text' as const, text: `Question: ${question}` },
@@ -96,11 +145,12 @@ export function anthropicProxy(): Plugin {
         try {
           const body = await readJson(req);
           const sizeKb = Math.round(JSON.stringify(body).length / 1024);
-          console.log(`[anthropic] body parsed in ${Date.now() - t0}ms — ${body.rows?.length ?? 0} rows, ${sizeKb} KB`);
-          const requestBody = buildAnthropicRequest(body.question, {
-            columns: body.columns,
-            rows: body.rows,
-          });
+          const mode = body.summary ? 'summary' : 'full';
+          const rowsForLog = mode === 'summary' ? body.summary.totalRows : (body.rows?.length ?? 0);
+          console.log(`[anthropic] body parsed in ${Date.now() - t0}ms — mode=${mode}, ${rowsForLog} rows, ${sizeKb} KB on wire`);
+          const requestBody = mode === 'summary'
+            ? buildSummaryRequest(body.question, body.summary)
+            : buildAnthropicRequest(body.question, { columns: body.columns, rows: body.rows });
           const client = new Anthropic({ apiKey });
           const tApi = Date.now();
           const response = await client.messages.create(requestBody as any);

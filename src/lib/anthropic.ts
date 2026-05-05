@@ -1,12 +1,17 @@
 import type { Dataset, Result } from '@/types';
+import { shouldSummarize, summarize } from '@/lib/dataset-summary';
 
 export class AnthropicError extends Error {}
 
 export async function askClaude(question: string, dataset: Dataset): Promise<Result> {
+  const payload = shouldSummarize(dataset)
+    ? { question, summary: summarize(dataset) }
+    : { question, columns: dataset.columns, rows: dataset.rows };
+
   const res = await fetch('/api/anthropic', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ question, columns: dataset.columns, rows: dataset.rows }),
+    body: JSON.stringify(payload),
   });
   const text = await res.text();
   let body: any = null;
